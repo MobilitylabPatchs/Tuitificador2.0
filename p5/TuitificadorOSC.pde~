@@ -1,0 +1,148 @@
+/* Tuitificador de sons. processing+libPD+twitter 
+ 
+ Jordi Sala jordi@poperbu.net 
+ 
+ musa.poperbu.net
+ mobilitylab.net
+ 
+ Twitter functions: RobotGrrl.com
+ 
+ 
+ */
+
+
+import processing.opengl.*; 
+import oscP5.*;
+import netP5.*;
+
+//OSC
+OscP5 oscP5;
+// a NetAddress contains the ip address and port number of a remote location in the network.
+NetAddress myRemoteLocation; 
+int sendPort;
+int recvPort;
+
+
+
+//TWITTER AUTHENTICATION
+//to generate you twitter auth->  https://dev.twitter.com/apps/new
+// This is where you enter your Oauth info
+static String OAuthConsumerKey = "f6dBL28hyPHx5AzRjBmE3ShPZ";
+static String OAuthConsumerSecret = "pFJDvw4P8P4v034I0fhi35NfUElGqQLHwTfe7O9urvSnLow7Fv";
+// This is where you enter your Access Token info
+static String AccessToken = "575551336-tnfHU5nZ7wasS6MDkT9Sy75qVYKx54LSOfn5Mvqc";
+static String AccessTokenSecret = "oY9S3gcxy0lUUZ1Og29LaXhbpJIPQLgXbg1DOBaWcOiUP";
+
+
+
+//TwITTER VARS
+
+// Just some random variables kicking around
+String myTimeline;
+java.util.List statuses = null;
+User[] friends;
+Twitter twitter = new TwitterFactory().getInstance();
+RequestToken requestToken;
+String[] theSearchTweets = new String[11];
+float prova=0;
+String frase;
+
+void setup() {
+
+  size(800, 300);
+  background(0);
+
+  //OSC 
+  // 22222 is the port number you are listening for incoming osc messages.
+  oscP5 = new OscP5(this,22222);
+  // with the oscP5.send method.
+  myRemoteLocation = new NetAddress("127.0.0.1",11111);
+  oscP5.plug(this,"recvTest","/test");
+  oscP5.plug(this,"recvMissatge","/missatge");
+  frase="arte#ocupaSM 2013 ->Tuitificador";
+
+  //Twitter
+  connectTwitter();
+  //sendTweet("Test2 tuitificador #mobilitylab");
+}
+
+
+void draw() {
+  background(0);
+  fill(200, 0, 0);
+  stroke(255, 0, 0);
+  //ellipseMode(CENTER);
+  //ellipse(mouseX, mouseY, 20, 20);
+   fill(255);
+  textSize(30);
+  textAlign(CENTER);
+
+  text(frase,400, 150);  // Text wraps within text box
+
+
+
+}
+
+
+////////////////////////////////// O S C  E V E N T S ///////////////////////////////
+void recvTest(float testvalue1, float testvalue2, float testvalue3) {
+    //handle OSC message  
+    println(testvalue1);
+    //, testvalue2, testvalue3);
+    //sendTweet("Test audio1: pitch:"+testvalue1+"amplitude:"+testvalue2+"db:"+testvalue3);
+}
+
+void recvMissatge(String word1, String word2, String word3, String word4) {
+    //handle OSC message  
+    println(word1+" "+word2+" "+word3+" "+word4);
+    frase=word1+" "+word2+" "+word3+" "+word4;
+    sendTweet(word1+" "+word2+" "+word3+" "+word4+" #arteocupasm13");
+}
+
+//////////////////////////////////TWITTER FUNCTIONS///////////////////////////////////////////////////////////
+// Initial connection
+void connectTwitter() {
+
+  twitter.setOAuthConsumer(OAuthConsumerKey, OAuthConsumerSecret);
+  AccessToken accessToken = loadAccessToken();
+  twitter.setOAuthAccessToken(accessToken);
+}
+
+// Sending a tweet
+void sendTweet(String t) {
+
+  try {
+    Status status = twitter.updateStatus(t);
+    println("Successfully updated the status to [" + status.getText() + "].");
+  } 
+  catch(TwitterException e) { 
+    println("Send tweet: " + e + " Status code: " + e.getStatusCode());
+  }
+}
+
+
+// Loading up the access token
+private static AccessToken loadAccessToken() {
+  return new AccessToken(AccessToken, AccessTokenSecret);
+}
+
+
+// Get your tweets
+void getTimeline() {
+
+  try {
+    statuses = twitter.getUserTimeline();
+  } 
+  catch(TwitterException e) { 
+    println("Get timeline: " + e + " Status code: " + e.getStatusCode());
+  }
+
+  for (int i=0; i<statuses.size(); i++) {
+    Status status = (Status)statuses.get(i);
+    println(status.getUser().getName() + ": " + status.getText());
+  }
+}
+
+
+
+
